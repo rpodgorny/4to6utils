@@ -66,7 +66,8 @@ def main():
 		listen_sock_to_port_map[s] = p
 	#endfor
 
-	while 1:
+	run = True
+	while run:
 		rlist = listen_socks[:]
 		wlist = []
 		xlist = listen_socks[:]
