@@ -6,6 +6,7 @@ import sys
 import socket
 import select
 import subprocess
+import logging
 
 def find_ipv4_only():
 	def parse(s):
@@ -31,8 +32,8 @@ def find_ipv4_only():
 	ipv6 = parse(ipv6)
 	ipv6 = map(get_port, ipv6)
 	
-	#print ipv4
-	#print ipv6
+	logging.debug('ipv4: %s', ipv4)
+	logging.debug('ipv6: %s', ipv6)
 
 	ret = ipv4
 	for i in ipv6: ret.remove(i)
@@ -40,13 +41,15 @@ def find_ipv4_only():
 #enddef
 
 def main():
-	# TODO: for automatic mode
-	#print find_ipv4_only()
-	
+	logging.basicConfig(level=logging.DEBUG)
+
+	logging.info('starting XXX v%s', __version__)
+
 	ports = map(int, sys.argv[1:])
 	if not ports:
-		print 'no ports specified!'
-		return
+		logging.info('no ports specified, using autodetection')
+		ports = find_ipv4_only()
+		logging.info('found ports: %s', ports)
 	#endif
 
 	sock_pairs = []
@@ -58,7 +61,7 @@ def main():
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		s.bind(('::', p))
 		s.listen(10)
-		print 'listening on port %s' % p
+		logging.info('listening on port %s', p)
 		listen_socks.append(s)
 		listen_sock_to_port_map[s] = p
 	#endfor
@@ -80,14 +83,14 @@ def main():
 		for s in listen_socks:
 			if s in rlist:
 				conn, addr = s.accept()
-				print 'accept from %s' % addr
+				logging.info('accept from %s', addr)
 				s2 = socket.socket(socket.AF_INET)
 				s2.connect(('127.0.0.1', listen_sock_to_port_map[s]))
 				sock_pairs.append((conn, s2))
 			#endif
 
 			if s in xlist:
-				print 'sock in xlist'
+				logging.warrning('sock in xlist')
 				# TODO: do something
 				#break
 			#endif
@@ -102,7 +105,7 @@ def main():
 					s1.close()
 					s2.close()
 					sock_pairs.remove((s1, s2))
-					print 'shutdown1'
+					logging.info('shutdown1')
 				else:
 					s2.send(buf)
 				#endif
@@ -116,19 +119,19 @@ def main():
 					s2.close()
 					s1.close()
 					sock_pairs.remove((s1, s2))
-					print 'shutdown2'
+					logging.info('shutdown2')
 				else:
 					s1.send(buf)
 				#endif
 			#endif
 
 			if s1 in xlist:
-				print 's1 in xlist'
+				logging.warning('s1 in xlist')
 				# TODO: do something
 			#endif
 
 			if s2 in xlist:
-				print 's2 in xlist'
+				logging.warning('s2 in xlist')
 				# TODO: do something
 			#endif
 		#endfor
