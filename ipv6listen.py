@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 import sys
 import socket
@@ -30,13 +30,13 @@ def get_listening_ports():
 	#enddef
 
 	ipv4 = get_output('netstat -a -n -p tcp').split('\n')
-	ipv4 = [i for i in ipv4 if 'LISTENING' in i]
+	ipv4 = [i for i in ipv4 if '0.0.0.0' in i]
 	ipv4 = parse(ipv4)
 	ipv4 = map(get_port, ipv4)
 	ipv4 = sorted(list(set(ipv4)))
 	
 	ipv6 = get_output('netstat -a -n -p tcpv6').split('\n')
-	ipv6 = [i for i in ipv6 if 'LISTENING' in i]
+	ipv6 = [i for i in ipv6 if '[::]' in i]
 	ipv6 = parse(ipv6)
 	ipv6 = map(get_port, ipv6)
 	ipv6 = sorted(list(set(ipv6)))
