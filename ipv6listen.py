@@ -111,7 +111,7 @@ def main():
 				#endif
 
 				if s in xlist:
-					logging.warrning('sock in xlist')
+					logging.warrning('listening socket in xlist')
 					# TODO: do something
 					#break
 				#endif
@@ -173,7 +173,7 @@ def main():
 		s1.close()
 		s2.close()
 	#endfor
-	
+
 	if sys.platform == 'win32':
 		tray.exit()
 	#endif
