@@ -91,6 +91,8 @@ def main():
 
 		import tray
 		tray.run('ipv6listen.png', 'ipv6listen v%s' % __version__)
+	else:
+		tray = None
 	#endif
 
 	#ports = map(int, sys.argv[1:])
@@ -118,14 +120,14 @@ def main():
 
 	try:
 		run = True
-		while run and not tray._exit:
+		while run and not (tray and tray._exit):
 			t = time.time()
-			
+
 			if t-t_last_check > 60:
 				logging.info('scanning for listening port changes')
-				
+
 				ipv4_only, ipv6_only = find_only()
-				
+
 				for p in ipv4_only:
 					if p in listen_sock_to_port_map.values(): continue
 					
