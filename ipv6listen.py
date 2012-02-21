@@ -112,6 +112,8 @@ def main():
 	logging.info('starting ipv6listen v%s', __version__)
 	
 	init_xmlrpc()
+	else:
+		tray = None
 
 	#ports = map(int, sys.argv[1:])
 	#if not ports:
@@ -140,12 +142,12 @@ def main():
 		global _run
 		while _run:
 			t = time.time()
-			
+
 			if t-t_last_check > 60:
 				logging.info('scanning for listening port changes')
-				
+
 				ipv4_only, ipv6_only = find_only()
-				
+
 				for p in ipv4_only:
 					if p in listen_sock_to_port_map.values(): continue
 					
