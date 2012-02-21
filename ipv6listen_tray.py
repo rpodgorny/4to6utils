@@ -1,11 +1,10 @@
 import wx
-import thread
+import xmlrpclib
 
 import logging
-logger = logging.getLogger('tray')
+logger = logging.getLogger()
 
 _exit = False
-tb = None
 
 class Tray(wx.TaskBarIcon):
 	def CreatePopupMenu(self):
@@ -16,34 +15,30 @@ class Tray(wx.TaskBarIcon):
 	#enddef
 
 	def on_exit(self, e):
-		global _exit
-		_exit = True
 		logger.debug('clicked exit')
+		
+		_s.exit()
 	#enddef
 #endclass
 
-def run_app(icon_fn, text):
+def main():
+	logger.info('starting ipv6listen tray')
+
+	global _s
+	_s = xmlrpclib.ServerProxy('http://localhost:8888')
+
 	app = wx.App(0)
 
-	global tb
 	tb = Tray()
 
 	logger.debug('loading icon')
-	icon = wx.Icon(icon_fn, wx.BITMAP_TYPE_PNG)
-	tb.SetIcon(icon, text)
+	icon = wx.Icon('ipv6listen.png', wx.BITMAP_TYPE_PNG)
+	tb.SetIcon(icon, 'dummy text')
 
 	logger.info('starting MainLoop')
 	app.MainLoop()
 #enddef
 
-def run(icon_fn, text):
-	logger.debug('run')
-
-	thread.start_new_thread(run_app, (icon_fn, text, ))
-#enddef
-
-def exit():
-	logger.debug('exit')
-
-	tb.Destroy()
-#enddef
+if __name__ == '__main__':
+	main()
+#endif

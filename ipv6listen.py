@@ -7,6 +7,10 @@ import socket
 import select
 import logging
 import time
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+
+# TODO: uglyyy!!!
+_run = True
 
 # TODO: this is version for windowed applications
 def get_output(cmd):
@@ -80,18 +84,34 @@ def init_logging():
 	logger.addHandler(fh)
 #enddef
 
+class XMLRPCServer(object):
+	def exit(self):
+		logging.debug('xmlrcp: exit')
+		global _run
+		_run = False
+	#enddef
+#endclass
+
+def init_xmlrpc():
+	logging.info('starting xmlrpc')
+
+	server = SimpleXMLRPCServer(('localhost', 8888), allow_none=True, logRequests=False)
+	server.register_introspection_functions()
+	
+	s = XMLRPCServer()
+	server.register_instance(s)
+	
+	import thread
+	thread.start_new_thread(server.serve_forever, ())
+#enddef
+
 def main():
 	init_logging()
 
 	logging.info('*' * 40)
 	logging.info('starting ipv6listen v%s', __version__)
-
-	if sys.platform == 'win32':
-		logging.info('detected win32')
-
-		import tray
-		tray.run('ipv6listen.png', 'ipv6listen v%s' % __version__)
-	#endif
+	
+	init_xmlrpc()
 
 	#ports = map(int, sys.argv[1:])
 	#if not ports:
@@ -117,8 +137,8 @@ def main():
 	t_last_check = 0
 
 	try:
-		run = True
-		while run and not tray._exit:
+		global _run
+		while _run:
 			t = time.time()
 			
 			if t-t_last_check > 60:
@@ -238,10 +258,6 @@ def main():
 		s1.close()
 		s2.close()
 	#endfor
-
-	if sys.platform == 'win32':
-		tray.exit()
-	#endif
 #enddef
 
 if __name__ == '__main__': main()
