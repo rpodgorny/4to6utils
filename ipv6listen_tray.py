@@ -20,8 +20,14 @@ class Tray(wx.TaskBarIcon):
 
 	def on_exit(self, e):
 		log.log('clicked exit')
-		
-		_s.exit()
+
+		try:
+			_s.exit()
+		except:
+			log.log('failed to call remote exit')
+		#endtry
+
+		wx.GetApp().ExitMainLoop()
 	#enddef
 #endclass
 
@@ -42,6 +48,7 @@ def main():
 
 	log.log('starting MainLoop')
 	app.MainLoop()
+	log.log('exited MainLoop')
 #enddef
 
 if __name__ == '__main__':
