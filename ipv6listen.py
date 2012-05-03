@@ -1,13 +1,16 @@
 #!/usr/bin/python
 
-__version__ = '0.3'
+__version__ = '0.4'
 
 import sys
 import socket
 import select
-import logging
 import time
 from SimpleXMLRPCServer import SimpleXMLRPCServer
+
+import log
+sys.excepthook = log.log_exception
+log.filename = 'ipv6listen.log'
 
 # TODO: uglyyy!!!
 _run = True
@@ -51,8 +54,8 @@ def get_listening_ports():
 def find_only():
 	ipv4, ipv6 = get_listening_ports()
 
-	logging.debug('ipv4: %s', ipv4)
-	logging.debug('ipv6: %s', ipv6)
+	log.log('ipv4: %s' % ipv4)
+	log.log('ipv6: %s' % ipv6)
 
 	ret4 = ipv4[:]
 	for i in ipv6:
@@ -64,36 +67,22 @@ def find_only():
 		if i in ret6: ret6.remove(i)
 	#endfor
 	
-	logging.debug('ipv4_only: %s', ret4)
-	logging.debug('ipv6_only: %s', ret6)
+	log.log('ipv4_only: %s' % ret4)
+	log.log('ipv6_only: %s' % ret6)
 
 	return ret4, ret6
 #enddef
 
-def init_logging():
-	logger = logging.getLogger()
-	logger.setLevel(logging.DEBUG)
-
-	sh = logging.StreamHandler()
-	fh = logging.FileHandler('ipv6listen.log')
-
-	sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-	fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-
-	logger.addHandler(sh)
-	logger.addHandler(fh)
-#enddef
-
 class XMLRPCServer(object):
 	def exit(self):
-		logging.debug('xmlrcp: exit')
+		log.log('xmlrcp: exit')
 		global _run
 		_run = False
 	#enddef
 #endclass
 
 def init_xmlrpc():
-	logging.info('starting xmlrpc')
+	log.log('starting xmlrpc')
 
 	server = SimpleXMLRPCServer(('localhost', 8888), allow_none=True, logRequests=False)
 	server.register_introspection_functions()
@@ -106,20 +95,16 @@ def init_xmlrpc():
 #enddef
 
 def main():
-	init_logging()
-
-	logging.info('*' * 40)
-	logging.info('starting ipv6listen v%s', __version__)
+	log.log('*' * 40)
+	log.log('starting ipv6listen v%s' % __version__)
 	
 	init_xmlrpc()
-	else:
-		tray = None
 
 	#ports = map(int, sys.argv[1:])
 	#if not ports:
-	#	logging.info('no ports specified, using autodetection')
+	#	log.log('no ports specified, using autodetection')
 	#	ports,_ = find_only()
-	#	logging.info('found ports: %s', ports)
+	#	log.log('found ports: %s' % ports)
 	#endif
 
 	sock_pairs = []
@@ -131,7 +116,7 @@ def main():
 	#	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	#	s.bind(('::', p))
 	#	s.listen(10)
-	#	logging.info('listening on port %s', p)
+	#	log.log('listening on port %s' % p)
 	#	listen_socks.append(s)
 	#	listen_sock_to_port_map[s] = p
 	#endfor
@@ -144,20 +129,20 @@ def main():
 			t = time.time()
 
 			if t-t_last_check > 60:
-				logging.info('scanning for listening port changes')
+				log.log('scanning for listening port changes')
 
 				ipv4_only, ipv6_only = find_only()
 
 				for p in ipv4_only:
 					if p in listen_sock_to_port_map.values(): continue
 					
-					logging.info('found new ipv4-only port %s', p)
+					log.log('found new ipv4-only port %s' % p)
 
 					s = socket.socket(socket.AF_INET6)
 					s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					s.bind(('::', p))
 					s.listen(10)
-					logging.info('listening on port %s', p)
+					log.log('listening on port %s' % p)
 					listen_socks.append(s)
 					listen_sock_to_port_map[s] = p
 				#endfor
@@ -165,7 +150,7 @@ def main():
 				for s,p in listen_sock_to_port_map.items():
 					if not p in ipv6_only: continue
 
-					logging.info('detected stale ipv6-only port %s', p)
+					log.log('detected stale ipv6-only port %s' % p)
 
 					listen_socks.remove(s)
 					del listen_sock_to_port_map[s]
@@ -191,14 +176,14 @@ def main():
 			for s in listen_socks:
 				if s in rlist:
 					conn, addr = s.accept()
-					logging.info('accept from %s for socket on port %s', addr, listen_sock_to_port_map[s])
+					log.log('accept from %s for socket on port %s' % (addr, listen_sock_to_port_map[s], ))
 					s2 = socket.socket(socket.AF_INET)
 					s2.connect(('127.0.0.1', listen_sock_to_port_map[s]))
 					sock_pairs.append((conn, s2))
 				#endif
 
 				if s in xlist:
-					logging.warrning('listening socket in xlist')
+					log.log('listening socket in xlist')
 					# TODO: do something
 					#break
 				#endif
@@ -213,7 +198,7 @@ def main():
 						s1.close()
 						s2.close()
 						sock_pairs.remove((s1, s2))
-						logging.info('shutdown1')
+						log.log('shutdown1')
 					else:
 						s2.send(buf)
 					#endif
@@ -227,33 +212,33 @@ def main():
 						s2.close()
 						s1.close()
 						sock_pairs.remove((s1, s2))
-						logging.info('shutdown2')
+						log.log('shutdown2')
 					else:
 						s1.send(buf)
 					#endif
 				#endif
 
 				if s1 in xlist:
-					logging.warning('s1 in xlist')
+					log.log('s1 in xlist')
 					# TODO: do something
 				#endif
 
 				if s2 in xlist:
-					logging.warning('s2 in xlist')
+					log.log('s2 in xlist')
 					# TODO: do something
 				#endif
 			#endfor
 		#endwhile
 	except KeyboardInterrupt:
-		logging.info('keyboard interrupt!')
+		log.log('keyboard interrupt!')
 	#endtry
 
-	logging.info('shutting down listening sockets')
+	log.log('shutting down listening sockets')
 	for s in listen_socks:
 		s.close()
 	#endfor
 
-	logging.info('shutting down socket pairs')
+	log.log('shutting down socket pairs')
 	for s1,s2 in sock_pairs:
 		s1.shutdown(socket.SHUT_RDWR)
 		s2.shutdown(socket.SHUT_RDWR)
