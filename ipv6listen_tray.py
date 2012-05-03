@@ -1,5 +1,6 @@
 from ipv6listen import __version__
 
+import sys
 import wx
 import xmlrpclib
 
@@ -37,7 +38,7 @@ def main():
 
 	log.log('loading icon')
 	icon = wx.Icon('ipv6listen.png', wx.BITMAP_TYPE_PNG)
-	tb.SetIcon(icon, 'dummy text')
+	tb.SetIcon(icon, 'ipv6listen')
 
 	log.log('starting MainLoop')
 	app.MainLoop()
