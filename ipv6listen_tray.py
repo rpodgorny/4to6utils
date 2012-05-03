@@ -1,8 +1,11 @@
+from ipv6listen import __version__
+
 import wx
 import xmlrpclib
 
-import logging
-logger = logging.getLogger()
+import log
+sys.excepthook = log.log_exception
+log.filename = 'ipv6listen_tray.log'
 
 _exit = False
 
@@ -15,14 +18,15 @@ class Tray(wx.TaskBarIcon):
 	#enddef
 
 	def on_exit(self, e):
-		logger.debug('clicked exit')
+		log.log('clicked exit')
 		
 		_s.exit()
 	#enddef
 #endclass
 
 def main():
-	logger.info('starting ipv6listen tray')
+	log.log('*' * 40)
+	log.log('starting ipv6listen tray v%s' % __version__)
 
 	global _s
 	_s = xmlrpclib.ServerProxy('http://localhost:8888')
@@ -31,11 +35,11 @@ def main():
 
 	tb = Tray()
 
-	logger.debug('loading icon')
+	log.log('loading icon')
 	icon = wx.Icon('ipv6listen.png', wx.BITMAP_TYPE_PNG)
 	tb.SetIcon(icon, 'dummy text')
 
-	logger.info('starting MainLoop')
+	log.log('starting MainLoop')
 	app.MainLoop()
 #enddef
 
