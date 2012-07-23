@@ -191,7 +191,13 @@ def main():
 
 			for s1,s2 in sock_pairs:
 				if s1 in rlist:
-					buf = s1.recv(100000)
+					try:
+						buf = s1.recv(100000)
+					except:
+						log.log('s1.recv() exception, probably closed by remote end')
+						buf = ''
+					#endtry
+					
 					if len(buf) == 0:
 						s1.shutdown(socket.SHUT_RDWR)
 						s2.shutdown(socket.SHUT_RDWR)
@@ -205,7 +211,13 @@ def main():
 				#endif
 
 				if s2 in rlist:
-					buf = s2.recv(100000)
+					try:
+						buf = s2.recv(100000)
+					except:
+						log.log('s2.recv() exception, probably closed by remote end')
+						buf = ''
+					#endtry
+					
 					if len(buf) == 0:
 						s2.shutdown(socket.SHUT_RDWR)
 						s1.shutdown(socket.SHUT_RDWR)
