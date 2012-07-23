@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-__version__ = '1.0'
+__version__ = '1.1'
 
 import sys
 import socket
@@ -217,7 +217,7 @@ def main():
 						log.log('s2.recv() exception, probably closed by remote end')
 						buf = ''
 					#endtry
-					
+
 					if len(buf) == 0:
 						s2.shutdown(socket.SHUT_RDWR)
 						s1.shutdown(socket.SHUT_RDWR)
