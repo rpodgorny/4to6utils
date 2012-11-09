@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 import sys
 import socket
@@ -15,12 +15,14 @@ log.filename = 'ipv6listen.log'
 # TODO: uglyyy!!!
 _run = True
 
+
 # TODO: this is version for windowed applications
 def get_output(cmd):
 	import os
 	f = os.popen(cmd)
 	return f.read()
 #enddef
+
 
 def get_listening_ports():
 	def parse(s):
@@ -30,7 +32,7 @@ def get_listening_ports():
 			_, local_addr, _ = i.split(' ', 2)
 			yield local_addr
 	#enddef
-	
+
 	def get_port(s):
 		port = s.rsplit(':', 1)[1]
 		return int(port)
@@ -41,15 +43,16 @@ def get_listening_ports():
 	ipv4 = parse(ipv4)
 	ipv4 = map(get_port, ipv4)
 	ipv4 = sorted(list(set(ipv4)))
-	
+
 	ipv6 = get_output('netstat -a -n -p tcpv6').split('\n')
 	ipv6 = [i for i in ipv6 if '[::]' in i]
 	ipv6 = parse(ipv6)
 	ipv6 = map(get_port, ipv6)
 	ipv6 = sorted(list(set(ipv6)))
-	
+
 	return ipv4, ipv6
 #enddef
+
 
 def find_only():
 	ipv4, ipv6 = get_listening_ports()
@@ -61,17 +64,18 @@ def find_only():
 	for i in ipv6:
 		if i in ret4: ret4.remove(i)
 	#endfor
-	
+
 	ret6 = ipv6[:]
 	for i in ipv4:
 		if i in ret6: ret6.remove(i)
 	#endfor
-	
+
 	log.log('ipv4_only: %s' % ret4)
 	log.log('ipv6_only: %s' % ret6)
 
 	return ret4, ret6
 #enddef
+
 
 class XMLRPCServer(object):
 	def exit(self):
@@ -81,23 +85,25 @@ class XMLRPCServer(object):
 	#enddef
 #endclass
 
+
 def init_xmlrpc():
 	log.log('starting xmlrpc')
 
 	server = SimpleXMLRPCServer(('localhost', 8888), allow_none=True, logRequests=False)
 	server.register_introspection_functions()
-	
+
 	s = XMLRPCServer()
 	server.register_instance(s)
-	
+
 	import thread
 	thread.start_new_thread(server.serve_forever, ())
 #enddef
 
+
 def main():
 	log.log('*' * 40)
 	log.log('starting ipv6listen v%s' % __version__)
-	
+
 	init_xmlrpc()
 
 	#ports = map(int, sys.argv[1:])
@@ -120,7 +126,7 @@ def main():
 	#	listen_socks.append(s)
 	#	listen_sock_to_port_map[s] = p
 	#endfor
-	
+
 	t_last_check = 0
 
 	try:
@@ -128,14 +134,14 @@ def main():
 		while _run:
 			t = time.time()
 
-			if t-t_last_check > 60:
+			if t - t_last_check > 60:
 				log.log('scanning for listening port changes')
 
 				ipv4_only, ipv6_only = find_only()
 
 				for p in ipv4_only:
 					if p in listen_sock_to_port_map.values(): continue
-					
+
 					log.log('found new ipv4-only port %s' % p)
 
 					s = socket.socket(socket.AF_INET6)
@@ -147,7 +153,7 @@ def main():
 					listen_sock_to_port_map[s] = p
 				#endfor
 
-				for s,p in listen_sock_to_port_map.items():
+				for s, p in listen_sock_to_port_map.items():
 					if not p in ipv6_only: continue
 
 					log.log('detected stale ipv6-only port %s' % p)
@@ -156,15 +162,15 @@ def main():
 					del listen_sock_to_port_map[s]
 					s.close()
 				#endfor
-				
+
 				t_last_check = t
 			#endif
-			
+
 			rlist = listen_socks[:]
 			wlist = []
 			xlist = listen_socks[:]
 
-			for s1,s2 in sock_pairs:
+			for s1, s2 in sock_pairs:
 				rlist.append(s1)
 				rlist.append(s2)
 				xlist.append(s1)
@@ -178,8 +184,12 @@ def main():
 					conn, addr = s.accept()
 					log.log('accept from %s for socket on port %s' % (addr, listen_sock_to_port_map[s], ))
 					s2 = socket.socket(socket.AF_INET)
-					s2.connect(('127.0.0.1', listen_sock_to_port_map[s]))
-					sock_pairs.append((conn, s2))
+					try:
+						s2.connect(('127.0.0.1', listen_sock_to_port_map[s]))
+						sock_pairs.append((conn, s2))
+					except socket.error as e:
+						log.log('failed to connect to local ipv4 socket. errno is %s' % e.errno)
+					#endtry
 				#endif
 
 				if s in xlist:
@@ -189,7 +199,7 @@ def main():
 				#endif
 			#endfor
 
-			for s1,s2 in sock_pairs:
+			for s1, s2 in sock_pairs:
 				if s1 in rlist:
 					try:
 						buf = s1.recv(100000)
@@ -197,7 +207,7 @@ def main():
 						log.log('s1.recv() exception, probably closed by remote end')
 						buf = ''
 					#endtry
-					
+
 					if len(buf) == 0:
 						s1.shutdown(socket.SHUT_RDWR)
 						s2.shutdown(socket.SHUT_RDWR)
@@ -251,7 +261,7 @@ def main():
 	#endfor
 
 	log.log('shutting down socket pairs')
-	for s1,s2 in sock_pairs:
+	for s1, s2 in sock_pairs:
 		s1.shutdown(socket.SHUT_RDWR)
 		s2.shutdown(socket.SHUT_RDWR)
 		s1.close()
