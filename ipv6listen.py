@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-__version__ = '1.2'
+__version__ = '1.3'
 
 import sys
 import socket
@@ -57,8 +57,8 @@ def get_listening_ports():
 def find_only():
 	ipv4, ipv6 = get_listening_ports()
 
-	log.log('ipv4: %s' % ipv4)
-	log.log('ipv6: %s' % ipv6)
+	log.debug('ipv4: %s' % ipv4)
+	log.debug('ipv6: %s' % ipv6)
 
 	ret4 = ipv4[:]
 	for i in ipv6:
@@ -70,16 +70,26 @@ def find_only():
 		if i in ret6: ret6.remove(i)
 	#endfor
 
-	log.log('ipv4_only: %s' % ret4)
-	log.log('ipv6_only: %s' % ret6)
+	log.debug('ipv4_only: %s' % ret4)
+	log.debug('ipv6_only: %s' % ret6)
 
 	return ret4, ret6
 #enddef
 
 
+def shutdown_socket(sock):
+	try:
+		sock.shutdown(socket.SHUT_RDWR)
+		sock.close()
+	except:
+		log.error('socket shutdown failed')
+	#endtry
+#enddef
+
+
 class XMLRPCServer(object):
 	def exit(self):
-		log.log('xmlrcp: exit')
+		log.debug('xmlrcp: exit')
 		global _run
 		_run = False
 	#enddef
@@ -87,7 +97,7 @@ class XMLRPCServer(object):
 
 
 def init_xmlrpc():
-	log.log('starting xmlrpc')
+	log.info('starting xmlrpc')
 
 	server = SimpleXMLRPCServer(('localhost', 8888), allow_none=True, logRequests=False)
 	server.register_introspection_functions()
@@ -101,16 +111,16 @@ def init_xmlrpc():
 
 
 def main():
-	log.log('*' * 40)
-	log.log('starting ipv6listen v%s' % __version__)
+	log.info('*' * 40)
+	log.info('starting ipv6listen v%s' % __version__)
 
 	init_xmlrpc()
 
 	#ports = map(int, sys.argv[1:])
 	#if not ports:
-	#	log.log('no ports specified, using autodetection')
+	#	log.info('no ports specified, using autodetection')
 	#	ports,_ = find_only()
-	#	log.log('found ports: %s' % ports)
+	#	log.info('found ports: %s' % ports)
 	#endif
 
 	sock_pairs = []
@@ -122,7 +132,7 @@ def main():
 	#	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	#	s.bind(('::', p))
 	#	s.listen(10)
-	#	log.log('listening on port %s' % p)
+	#	log.info('listening on port %s' % p)
 	#	listen_socks.append(s)
 	#	listen_sock_to_port_map[s] = p
 	#endfor
@@ -135,20 +145,20 @@ def main():
 			t = time.time()
 
 			if t - t_last_check > 60:
-				log.log('scanning for listening port changes')
+				log.debug('scanning for listening port changes')
 
 				ipv4_only, ipv6_only = find_only()
 
 				for p in ipv4_only:
 					if p in listen_sock_to_port_map.values(): continue
 
-					log.log('found new ipv4-only port %s' % p)
+					log.debug('found new ipv4-only port %s' % p)
 
 					s = socket.socket(socket.AF_INET6)
 					s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					s.bind(('::', p))
 					s.listen(10)
-					log.log('listening on port %s' % p)
+					log.debug('listening on port %s' % p)
 					listen_socks.append(s)
 					listen_sock_to_port_map[s] = p
 				#endfor
@@ -156,7 +166,7 @@ def main():
 				for s, p in listen_sock_to_port_map.items():
 					if not p in ipv6_only: continue
 
-					log.log('detected stale ipv6-only port %s' % p)
+					log.debug('detected stale ipv6-only port %s' % p)
 
 					listen_socks.remove(s)
 					del listen_sock_to_port_map[s]
@@ -182,18 +192,18 @@ def main():
 			for s in listen_socks:
 				if s in rlist:
 					conn, addr = s.accept()
-					log.log('accept from %s for socket on port %s' % (addr, listen_sock_to_port_map[s], ))
+					log.info('accept from %s for socket on port %s' % (addr, listen_sock_to_port_map[s], ))
 					s2 = socket.socket(socket.AF_INET)
 					try:
 						s2.connect(('127.0.0.1', listen_sock_to_port_map[s]))
 						sock_pairs.append((conn, s2))
 					except socket.error as e:
-						log.log('failed to connect to local ipv4 socket. errno is %s' % e.errno)
+						log.error('failed to connect to local ipv4 socket. errno is %s' % e.errno)
 					#endtry
 				#endif
 
 				if s in xlist:
-					log.log('listening socket in xlist')
+					log.debug('listening socket in xlist')
 					# TODO: do something
 					#break
 				#endif
@@ -204,17 +214,17 @@ def main():
 					try:
 						buf = s1.recv(100000)
 					except:
-						log.log('s1.recv() exception, probably closed by remote end')
+						log.debug('s1.recv() exception, probably closed by remote end')
 						buf = ''
 					#endtry
 
 					if len(buf) == 0:
-						s1.shutdown(socket.SHUT_RDWR)
-						s2.shutdown(socket.SHUT_RDWR)
-						s1.close()
-						s2.close()
+						log.debug('shutdown1')
+
+						shutdown_socket(s2)
+						shutdown_socket(s1)
+
 						sock_pairs.remove((s1, s2))
-						log.log('shutdown1')
 					else:
 						s2.send(buf)
 					#endif
@@ -224,48 +234,46 @@ def main():
 					try:
 						buf = s2.recv(100000)
 					except:
-						log.log('s2.recv() exception, probably closed by remote end')
+						log.debug('s2.recv() exception, probably closed by remote end')
 						buf = ''
 					#endtry
 
 					if len(buf) == 0:
-						s2.shutdown(socket.SHUT_RDWR)
-						s1.shutdown(socket.SHUT_RDWR)
-						s2.close()
-						s1.close()
+						log.debug('shutdown2')
+
+						shutdown_socket(s2)
+						shutdown_socket(s1)
+
 						sock_pairs.remove((s1, s2))
-						log.log('shutdown2')
 					else:
 						s1.send(buf)
 					#endif
 				#endif
 
 				if s1 in xlist:
-					log.log('s1 in xlist')
+					log.debug('s1 in xlist')
 					# TODO: do something
 				#endif
 
 				if s2 in xlist:
-					log.log('s2 in xlist')
+					log.debug('s2 in xlist')
 					# TODO: do something
 				#endif
 			#endfor
 		#endwhile
 	except KeyboardInterrupt:
-		log.log('keyboard interrupt!')
+		log.debug('keyboard interrupt!')
 	#endtry
 
-	log.log('shutting down listening sockets')
+	log.info('shutting down listening sockets')
 	for s in listen_socks:
 		s.close()
 	#endfor
 
-	log.log('shutting down socket pairs')
+	log.info('shutting down socket pairs')
 	for s1, s2 in sock_pairs:
-		s1.shutdown(socket.SHUT_RDWR)
-		s2.shutdown(socket.SHUT_RDWR)
-		s1.close()
-		s2.close()
+		socket_shutdown(s1)
+		socket_shutdown(s2)
 	#endfor
 #enddef
 
