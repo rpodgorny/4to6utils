@@ -1,17 +1,7 @@
-#!/usr/bin/python
-
-from version import __version__
-
-import sys
+import os
+import time
 import socket
 import select
-import time
-
-import logging
-sys.excepthook = lambda type, value, traceback: logging.critical('unhandled exception', exc_info=(type, value, traceback))
-
-# TODO: uglyyy!!!
-_run = True
 
 
 # TODO: this is version for windowed applications
@@ -150,10 +140,10 @@ class MainLoop():
 
 			# this a workaround for windows because it can't handle when all lists are empty
 			if not rlist and not wlist and not xlist:
-				time.sleep(0.1)
+				time.sleep(0.1)  # TODO: hard-coded shit
 				rlist, wlist, xlist = [], [], []
 			else:
-				rlist, wlist, xlist = select.select(rlist, wlist, xlist, 1)
+				rlist, wlist, xlist = select.select(rlist, wlist, xlist, 1)  # TODO: hard-coded shit
 			#endif
 
 			for s in listen_socks:
@@ -271,24 +261,3 @@ def logging_setup(level, fn=None):
 		logger.addHandler(fh)
 	#endif
 #enddef
-
-
-def main():
-	logging_setup('DEBUG', 'ipv6listen.log')
-
-	logging.info('*' * 40)
-	logging.info('starting ipv6listen v%s' % __version__)
-
-	ml = MainLoop()
-
-	try:
-		ml.run()
-	except KeyboardInterrupt:
-		logging.debug('keyboard interrupt!')
-	#endtry
-#enddef
-
-
-if __name__ == '__main__':
-	main()
-#endif

@@ -2,7 +2,7 @@
 
 from version import __version__
 
-from ipv6listen import *
+from utils import *
 from PySide.QtCore import *
 from PySide.QtGui import *
 import threading
@@ -13,13 +13,13 @@ sys.excepthook = lambda type, value, traceback: logging.critical('unhandled exce
 
 class MyTray(QSystemTrayIcon):
 	def __init__(self, app, ml):
-		icon = QIcon('ipv6listen.png')
+		icon = QIcon('4to6server.png')
 		super().__init__(icon)
 
 		self.app = app
 		self.ml = ml
 
-		self.setToolTip('ipv6listen_gui v%s' % __version__)
+		self.setToolTip('4to6server_gui v%s' % __version__)
 
 		menu = QMenu()
 		menu.addAction('Force refresh', self.on_refresh)
@@ -42,10 +42,10 @@ class MyTray(QSystemTrayIcon):
 
 
 def main():
-	logging_setup('DEBUG', 'ipv6listen_gui.log')
+	logging_setup('DEBUG', '4to6server_gui.log')
 
 	logging.info('*' * 40)
-	logging.info('starting ipv6listen tray v%s' % __version__)
+	logging.info('starting 4to6server_gui v%s' % __version__)
 
 	ml = MainLoop()
 	thr = threading.Thread(target=ml.run)
