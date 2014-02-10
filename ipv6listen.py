@@ -1,16 +1,14 @@
 #!/usr/bin/python
 
-__version__ = '1.3'
+from version import __version__
 
 import sys
 import socket
 import select
 import time
-from SimpleXMLRPCServer import SimpleXMLRPCServer
 
-import log
-sys.excepthook = log.log_exception
-log.filename = 'ipv6listen.log'
+import logging
+sys.excepthook = lambda type, value, traceback: logging.critical('unhandled exception', exc_info=(type, value, traceback))
 
 # TODO: uglyyy!!!
 _run = True
@@ -57,8 +55,8 @@ def get_listening_ports():
 def find_only():
 	ipv4, ipv6 = get_listening_ports()
 
-	log.debug('ipv4: %s' % ipv4)
-	log.debug('ipv6: %s' % ipv6)
+	logging.debug('ipv4: %s' % ipv4)
+	logging.debug('ipv6: %s' % ipv6)
 
 	ret4 = ipv4[:]
 	for i in ipv6:
@@ -70,8 +68,8 @@ def find_only():
 		if i in ret6: ret6.remove(i)
 	#endfor
 
-	log.debug('ipv4_only: %s' % ret4)
-	log.debug('ipv6_only: %s' % ret6)
+	logging.debug('ipv4_only: %s' % ret4)
+	logging.debug('ipv6_only: %s' % ret6)
 
 	return ret4, ret6
 #enddef
@@ -82,83 +80,44 @@ def shutdown_socket(sock):
 		sock.shutdown(socket.SHUT_RDWR)
 		sock.close()
 	except:
-		log.error('socket shutdown failed')
+		logging.error('socket shutdown failed')
 	#endtry
 #enddef
 
 
-class XMLRPCServer(object):
-	def exit(self):
-		log.debug('xmlrcp: exit')
-		global _run
-		_run = False
+class MainLoop():
+	def __init__(self):
+		self._run = False
+		self._refresh = False
 	#enddef
-#endclass
 
+	def run(self):
+		sock_pairs = []
 
-def init_xmlrpc():
-	log.info('starting xmlrpc')
+		listen_socks = []
+		listen_sock_to_port_map = {}
 
-	server = SimpleXMLRPCServer(('localhost', 8888), allow_none=True, logRequests=False)
-	server.register_introspection_functions()
+		t_last_check = 0
 
-	s = XMLRPCServer()
-	server.register_instance(s)
+		self._run = True
+		while self._run:
+			t = time.monotonic()
 
-	import thread
-	thread.start_new_thread(server.serve_forever, ())
-#enddef
-
-
-def main():
-	log.info('*' * 40)
-	log.info('starting ipv6listen v%s' % __version__)
-
-	init_xmlrpc()
-
-	#ports = map(int, sys.argv[1:])
-	#if not ports:
-	#	log.info('no ports specified, using autodetection')
-	#	ports,_ = find_only()
-	#	log.info('found ports: %s' % ports)
-	#endif
-
-	sock_pairs = []
-
-	listen_socks = []
-	listen_sock_to_port_map = {}
-	#for p in ports:
-	#	s = socket.socket(socket.AF_INET6)
-	#	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	#	s.bind(('::', p))
-	#	s.listen(10)
-	#	log.info('listening on port %s' % p)
-	#	listen_socks.append(s)
-	#	listen_sock_to_port_map[s] = p
-	#endfor
-
-	t_last_check = 0
-
-	try:
-		global _run
-		while _run:
-			t = time.time()
-
-			if t - t_last_check > 60:
-				log.debug('scanning for listening port changes')
+			if t - t_last_check > 60 or self._refresh:  # TODO: hard-coded shit
+				logging.debug('scanning for listening port changes')
 
 				ipv4_only, ipv6_only = find_only()
 
 				for p in ipv4_only:
 					if p in listen_sock_to_port_map.values(): continue
 
-					log.debug('found new ipv4-only port %s' % p)
+					logging.debug('found new ipv4-only port %s' % p)
 
 					s = socket.socket(socket.AF_INET6)
 					s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					s.bind(('::', p))
 					s.listen(10)
-					log.debug('listening on port %s' % p)
+					logging.debug('listening on port %s' % p)
 					listen_socks.append(s)
 					listen_sock_to_port_map[s] = p
 				#endfor
@@ -166,12 +125,14 @@ def main():
 				for s, p in listen_sock_to_port_map.items():
 					if not p in ipv6_only: continue
 
-					log.debug('detected stale ipv6-only port %s' % p)
+					logging.debug('detected stale ipv6-only port %s' % p)
 
 					listen_socks.remove(s)
 					del listen_sock_to_port_map[s]
 					s.close()
 				#endfor
+
+				self._refresh = False
 
 				t_last_check = t
 			#endif
@@ -187,23 +148,29 @@ def main():
 				xlist.append(s2)
 			#endfor
 
-			rlist, wlist, xlist = select.select(rlist, wlist, xlist, 1)
+			# this a workaround for windows because it can't handle when all lists are empty
+			if not rlist and not wlist and not xlist:
+				time.sleep(0.1)
+				rlist, wlist, xlist = [], [], []
+			else:
+				rlist, wlist, xlist = select.select(rlist, wlist, xlist, 1)
+			#endif
 
 			for s in listen_socks:
 				if s in rlist:
 					conn, addr = s.accept()
-					log.info('accept from %s for socket on port %s' % (addr, listen_sock_to_port_map[s], ))
+					logging.info('accept from %s for socket on port %s' % (addr, listen_sock_to_port_map[s], ))
 					s2 = socket.socket(socket.AF_INET)
 					try:
 						s2.connect(('127.0.0.1', listen_sock_to_port_map[s]))
 						sock_pairs.append((conn, s2))
 					except socket.error as e:
-						log.error('failed to connect to local ipv4 socket. errno is %s' % e.errno)
+						logging.error('failed to connect to local ipv4 socket. errno is %s' % e.errno)
 					#endtry
 				#endif
 
 				if s in xlist:
-					log.debug('listening socket in xlist')
+					logging.debug('listening socket in xlist')
 					# TODO: do something
 					#break
 				#endif
@@ -212,14 +179,14 @@ def main():
 			for s1, s2 in sock_pairs:
 				if s1 in rlist:
 					try:
-						buf = s1.recv(100000)
+						buf = s1.recv(100000)  # TODO: hard-coded shit
 					except:
-						log.debug('s1.recv() exception, probably closed by remote end')
+						logging.debug('s1.recv() exception, probably closed by remote end')
 						buf = ''
 					#endtry
 
 					if len(buf) == 0:
-						log.debug('shutdown1')
+						logging.debug('shutdown1')
 
 						shutdown_socket(s2)
 						shutdown_socket(s1)
@@ -232,14 +199,14 @@ def main():
 
 				if s2 in rlist:
 					try:
-						buf = s2.recv(100000)
+						buf = s2.recv(100000)  # TODO: hard-coded shit
 					except:
-						log.debug('s2.recv() exception, probably closed by remote end')
+						logging.debug('s2.recv() exception, probably closed by remote end')
 						buf = ''
 					#endtry
 
 					if len(buf) == 0:
-						log.debug('shutdown2')
+						logging.debug('shutdown2')
 
 						shutdown_socket(s2)
 						shutdown_socket(s1)
@@ -251,30 +218,77 @@ def main():
 				#endif
 
 				if s1 in xlist:
-					log.debug('s1 in xlist')
+					logging.debug('s1 in xlist')
 					# TODO: do something
 				#endif
 
 				if s2 in xlist:
-					log.debug('s2 in xlist')
+					logging.debug('s2 in xlist')
 					# TODO: do something
 				#endif
 			#endfor
 		#endwhile
-	except KeyboardInterrupt:
-		log.debug('keyboard interrupt!')
-	#endtry
 
-	log.info('shutting down listening sockets')
-	for s in listen_socks:
-		s.close()
-	#endfor
+		logging.debug('exited loop')
 
-	log.info('shutting down socket pairs')
-	for s1, s2 in sock_pairs:
-		socket_shutdown(s1)
-		socket_shutdown(s2)
-	#endfor
+		logging.info('shutting down listening sockets')
+		for s in listen_socks:
+			s.close()
+		#endfor
+
+		logging.info('shutting down socket pairs')
+		for s1, s2 in sock_pairs:
+			socket_shutdown(s1)
+			socket_shutdown(s2)
+		#endfor
+	#enddef
+
+	def refresh(self):
+		self._refresh = True
+	#enddef
+
+	def stop(self):
+		self._run = False
+	#enddef
+#endif
+
+
+def logging_setup(level, fn=None):
+	logger = logging.getLogger()
+	logger.setLevel(logging.DEBUG)
+
+	formatter = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
+
+	sh = logging.StreamHandler()
+	sh.setLevel(level)
+	sh.setFormatter(formatter)
+	logger.addHandler(sh)
+
+	if fn:
+		fh = logging.FileHandler(fn)
+		fh.setLevel(level)
+		fh.setFormatter(formatter)
+		logger.addHandler(fh)
+	#endif
 #enddef
 
-if __name__ == '__main__': main()
+
+def main():
+	logging_setup('DEBUG', 'ipv6listen.log')
+
+	logging.info('*' * 40)
+	logging.info('starting ipv6listen v%s' % __version__)
+
+	ml = MainLoop()
+
+	try:
+		ml.run()
+	except KeyboardInterrupt:
+		logging.debug('keyboard interrupt!')
+	#endtry
+#enddef
+
+
+if __name__ == '__main__':
+	main()
+#endif
