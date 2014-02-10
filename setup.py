@@ -1,18 +1,64 @@
-from distutils.core import setup
-import py2exe
+import sys
+from version import __version__
 
-from ipv6listen import __version__
 
-setup(
-	console = ['ipv6listen.py', ],
-	version = __version__,
-	zipfile = None,
-	options = {'py2exe': {'bundle_files': 1}}
-)
+if sys.platform == 'win32':
+	from cx_Freeze import setup, Executable
 
-setup(
-	windows = ['ipv6listen_tray.py', ],
-	version = __version__,
-	zipfile = None,
-	options = {'py2exe': {'bundle_files': 1}}
-)
+	base = 'Win32GUI'
+
+	executables = [
+		Executable(
+			script='ipv6listen.py',
+			appendScriptToExe=True,
+			appendScriptToLibrary=False,
+			compress=True,
+		),
+		Executable(
+			script='ipv6listen_gui.py',
+			appendScriptToExe=True,
+			appendScriptToLibrary=False,
+			compress=True,
+			base=base
+		),
+		Executable(
+			script='4to6.py',
+			appendScriptToExe=True,
+			appendScriptToLibrary=False,
+			compress=True,
+		),
+	]
+
+	setup(
+		name = 'ipv6utils',
+		version = __version__,
+		options = {
+			'build_exe': {
+				'includes': ['re', ],
+				'create_shared_zip': False,
+				'compressed': True,
+				'include_msvcr': True,
+				'include_files': ['ipv6listen.png', ]
+			},
+		},
+		executables = executables,
+	)
+else:
+	'''
+	from setuptools import setup, find_packages
+
+	setup(
+		name = 'faddns',
+		version = __version__,
+		options = {
+			'build_exe': {
+				'compressed': True,
+				'include_files': ['faddns.png', 'faddnsc.ini']
+			},
+		},
+		scripts = ['faddnsc'],
+		#packages = find_packages(),
+		py_modules = ['cfg', 'faddns', 'version'],
+	)'''
+	pass
+#endif

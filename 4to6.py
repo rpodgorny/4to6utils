@@ -1,16 +1,18 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-__version__ = '0.0'
+from version import __version__
 
 import sys
 import socket
 import select
+import logging
 
-port1 = int(sys.argv[1])
-remote = sys.argv[2]
-remote_port = int(sys.argv[3])
 
 def main():
+	port1 = int(sys.argv[1])
+	remote = sys.argv[2]
+	remote_port = int(sys.argv[3])
+
 	sock_pairs = []
 
 	sock = socket.socket(socket.AF_INET)
@@ -33,16 +35,17 @@ def main():
 		rlist, wlist, xlist = select.select(rlist, wlist, xlist)
 
 		if sock in rlist:
-			print 'accept'
+			logging.debug('accept')
 			conn, addr = sock.accept()
-			print addr
+			logging.debug('addr: %s' % addr)
+
 			s2 = socket.socket(socket.AF_INET6)
 			s2.connect((remote, remote_port))
 			sock_pairs.append((conn, s2))
 		#endif
 
 		if sock in xlist:
-			print 'sock in xlist'
+			logging.debug('sock in xlist')
 			break
 		#endif
 
@@ -55,7 +58,7 @@ def main():
 					s1.close()
 					s2.close()
 					sock_pairs.remove((s1, s2))
-					print 'shutdown1'
+					logging.debug('shutdown1')
 				else:
 					s2.send(buf)
 				#endif
@@ -69,18 +72,18 @@ def main():
 					s2.close()
 					s1.close()
 					sock_pairs.remove((s1, s2))
-					print 'shutdown2'
+					logging.debug('shutdown2')
 				else:
 					s1.send(buf)
 				#endif
 			#endif
 
 			if s1 in xlist:
-				print 's1 in xlist'
+				logging.debug('s1 in xlist')
 			#endif
 
 			if s2 in xlist:
-				print 's2 in xlist'
+				logging.debug('s2 in xlist')
 			#endif
 		#endfor
 	#endwhile
