@@ -9,20 +9,20 @@ if sys.platform == 'win32':
 
 	executables = [
 		Executable(
-			script='ipv6listen.py',
+			script='4to6server.py',
 			appendScriptToExe=True,
 			appendScriptToLibrary=False,
 			compress=True,
 		),
 		Executable(
-			script='ipv6listen_gui.py',
+			script='4to6server_gui.py',
 			appendScriptToExe=True,
 			appendScriptToLibrary=False,
 			compress=True,
 			base=base
 		),
 		Executable(
-			script='4to6.py',
+			script='4to6client.py',
 			appendScriptToExe=True,
 			appendScriptToLibrary=False,
 			compress=True,
@@ -38,7 +38,7 @@ if sys.platform == 'win32':
 				'create_shared_zip': False,
 				'compressed': True,
 				'include_msvcr': True,
-				'include_files': ['ipv6listen.png', ]
+				'include_files': ['4to6server.png', '4to6client.png']
 			},
 		},
 		executables = executables,
