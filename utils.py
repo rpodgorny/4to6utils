@@ -2,6 +2,7 @@ import os
 import time
 import socket
 import select
+import logging
 
 
 # TODO: this is version for windowed applications
