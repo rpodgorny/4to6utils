@@ -2,6 +2,7 @@
 
 from version import __version__
 
+import sys
 from utils import *
 
 import logging

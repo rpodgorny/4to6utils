@@ -5,7 +5,9 @@ from version import __version__
 import sys
 import socket
 import select
+
 import logging
+sys.excepthook = lambda type, value, traceback: logging.critical('unhandled exception', exc_info=(type, value, traceback))
 
 
 def logging_setup(level, fn=None):
