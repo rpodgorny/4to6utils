@@ -2,6 +2,7 @@
 
 from version import __version__
 
+import sys
 from utils import *
 from PySide.QtCore import *
 from PySide.QtGui import *
