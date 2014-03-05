@@ -3,6 +3,7 @@ import time
 import socket
 import select
 import logging
+import subprocess
 
 
 # TODO: this is version for windowed applications
