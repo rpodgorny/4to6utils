@@ -168,7 +168,9 @@ class MainLoop():
 				#endif
 			#endfor
 
-			for s1, s2 in sock_pairs:
+			for s1, s2 in sock_pairs[:]:
+				shut_it_down = False
+
 				if s1 in rlist:
 					try:
 						buf = s1.recv(100000)  # TODO: hard-coded shit
@@ -179,11 +181,7 @@ class MainLoop():
 
 					if len(buf) == 0:
 						logging.debug('shutdown1')
-
-						shutdown_socket(s2)
-						shutdown_socket(s1)
-
-						sock_pairs.remove((s1, s2))
+						shut_it_down = True
 					else:
 						s2.send(buf)
 					#endif
@@ -199,11 +197,7 @@ class MainLoop():
 
 					if len(buf) == 0:
 						logging.debug('shutdown2')
-
-						shutdown_socket(s2)
-						shutdown_socket(s1)
-
-						sock_pairs.remove((s1, s2))
+						shut_it_down = True
 					else:
 						s1.send(buf)
 					#endif
@@ -218,6 +212,13 @@ class MainLoop():
 					logging.debug('s2 in xlist')
 					# TODO: do something
 				#endif
+
+				if shut_it_down:
+					shutdown_socket(s2)
+					shutdown_socket(s1)
+
+					sock_pairs.remove((s1, s2))
+				#endif
 			#endfor
 		#endwhile
 
@@ -227,12 +228,14 @@ class MainLoop():
 		for s in listen_socks:
 			s.close()
 		#endfor
+		listen_socks.clear()
 
 		logging.info('shutting down socket pairs')
 		for s1, s2 in sock_pairs:
 			socket_shutdown(s1)
 			socket_shutdown(s2)
 		#endfor
+		sock_pairs.clear()
 	#enddef
 
 	def refresh(self):
