@@ -10,7 +10,7 @@ sys.excepthook = lambda type, value, traceback: logging.critical('unhandled exce
 
 
 def main():
-	logging_setup('DEBUG', '4to6server.log')
+	logging_setup('INFO', '4to6server.log')
 
 	logging.info('*' * 40)
 	logging.info('starting 4to6server v%s' % __version__)

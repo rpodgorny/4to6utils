@@ -103,7 +103,7 @@ class MainLoop():
 				for p in ipv4_only:
 					if p in listen_sock_to_port_map.values(): continue
 
-					logging.debug('found new ipv4-only port %s' % p)
+					logging.info('found new ipv4-only port %s' % p)
 
 					s = socket.socket(socket.AF_INET6)
 					s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -117,7 +117,7 @@ class MainLoop():
 				for s, p in listen_sock_to_port_map.items():
 					if not p in ipv6_only: continue
 
-					logging.debug('detected stale ipv6-only port %s' % p)
+					logging.info('detected stale ipv6-only port %s' % p)
 
 					listen_socks.remove(s)
 					del listen_sock_to_port_map[s]
