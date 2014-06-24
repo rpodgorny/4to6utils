@@ -183,7 +183,11 @@ class MainLoop():
 						logging.debug('shutdown1')
 						shut_it_down = True
 					else:
-						s2.send(buf)
+						try:
+							s2.send(buf)
+						except:
+							logging.exception('s2.send() exception')
+						#endtry
 					#endif
 				#endif
 
@@ -199,7 +203,11 @@ class MainLoop():
 						logging.debug('shutdown2')
 						shut_it_down = True
 					else:
-						s1.send(buf)
+						try:
+							s1.send(buf)
+						except:
+							logging.exception('s1.send() exception')
+						#endtry
 					#endif
 				#endif
 
