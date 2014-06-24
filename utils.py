@@ -114,7 +114,7 @@ class MainLoop():
 					listen_sock_to_port_map[s] = p
 				#endfor
 
-				for s, p in listen_sock_to_port_map.items():
+				for s, p in listen_sock_to_port_map.copy().items():
 					if not p in ipv6_only: continue
 
 					logging.info('detected stale ipv6-only port %s' % p)
