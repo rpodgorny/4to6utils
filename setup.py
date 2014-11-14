@@ -5,21 +5,12 @@ from version import __version__
 if sys.platform == 'win32':
 	from cx_Freeze import setup, Executable
 
-	base = 'Win32GUI'
-
 	executables = [
 		Executable(
 			script='4to6server.py',
 			appendScriptToExe=True,
 			appendScriptToLibrary=False,
 			compress=True,
-		),
-		Executable(
-			script='4to6server_gui.py',
-			appendScriptToExe=True,
-			appendScriptToLibrary=False,
-			compress=True,
-			base=base
 		),
 		Executable(
 			script='4to6client.py',
@@ -30,7 +21,7 @@ if sys.platform == 'win32':
 	]
 
 	setup(
-		name = 'ipv6utils',
+		name = '4to6utils',
 		version = __version__,
 		options = {
 			'build_exe': {
@@ -38,7 +29,6 @@ if sys.platform == 'win32':
 				'create_shared_zip': False,
 				'compressed': True,
 				'include_msvcr': True,
-				'include_files': ['4to6server.png', '4to6client.png']
 			},
 		},
 		executables = executables,
