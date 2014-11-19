@@ -14,10 +14,13 @@ rd /s /q pkg
 md pkg
 md pkg\%name%
 cp -av dist/* pkg/%name%/
+cp atxpkg_backup pkg/.atxpkg_backup
+
 cp add_to_path.bat pkg/%name%/
 cp install_service.bat pkg/%name%/
+cp nssm.exe pkg/%name%/
 cp remove_service.bat pkg/%name%/
-cp atxpkg_backup pkg/.atxpkg_backup
+cp setx.exe pkg/%name%/
 
 rd /s /q build
 rd /s /q dist
