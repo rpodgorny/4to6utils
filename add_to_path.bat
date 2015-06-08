@@ -5,4 +5,5 @@ Echo.%PATH% | findstr /C:"%p%">nul && (
 ) || (
 	echo adding to %p% to path
 	setx PATH "%PATH%;%p%" -m
+	set "PATH=%PATH%;%p%"
 )
