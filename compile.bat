@@ -22,7 +22,6 @@ cp add_to_path.bat pkg/%name%/
 cp install_service.bat pkg/%name%/
 cp nssm.exe pkg/%name%/
 cp remove_service.bat pkg/%name%/
-cp setx.exe pkg/%name%/
 
 rd /s /q build
 rd /s /q dist
