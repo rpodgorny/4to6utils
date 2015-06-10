@@ -3,6 +3,8 @@ echo this is compile.bat v0.3
 setlocal
 
 set name=4to6utils
+set pkgrel=2
+
 set PYTHONPATH=../pylib;../libsh
 
 rd /s /q build
@@ -41,14 +43,16 @@ if "%1" == "" (
 
 	set name=%name%.dev
 	set version=%datetime%
+	set upload=atxpkg@atxpkg-dev.asterix.cz:atxpkg/
 ) else if "%1" == "release" (
 	echo release version %version%
+	set upload=atxpkg@atxpkg.asterix.cz:atxpkg/
 ) else (
 	echo unknown parameter!
 	goto end
 )
 
-set pkg_fn=%name%-%version%.atxpkg.zip
+set pkg_fn=%name%-%version%-%pkgrel%.atxpkg.zip
 
 rm %pkg_fn%
 
@@ -58,6 +62,6 @@ cd ..
 
 rd /s /q pkg
 
-pscp %pkg_fn% radek@podgorny.cz:public_html/atxpkg/
+pscp %pkg_fn% %upload%
 
 :end
