@@ -5,15 +5,15 @@ from version import __version__
 executables = [
 	Executable(
 		script='4to6server.py',
-		appendScriptToExe=True,
-		appendScriptToLibrary=False,
-		compress=True,
+		#appendScriptToExe=True,
+		#appendScriptToLibrary=False,
+		#compress=True,
 	),
 	Executable(
 		script='4to6client.py',
-		appendScriptToExe=True,
-		appendScriptToLibrary=False,
-		compress=True,
+		#appendScriptToExe=True,
+		#appendScriptToLibrary=False,
+		#compress=True,
 	),
 ]
 
@@ -23,8 +23,8 @@ setup(
 	options = {
 		'build_exe': {
 			'includes': ['re', ],
-			'create_shared_zip': False,
-			'compressed': True,
+			#'create_shared_zip': False,
+			#'compressed': True,
 			'include_msvcr': True,
 		},
 	},
