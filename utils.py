@@ -11,7 +11,6 @@ def get_output(cmd):
 	import os
 	f = os.popen(cmd)
 	return f.read()
-#enddef
 
 
 def get_listening_ports():
@@ -21,12 +20,10 @@ def get_listening_ports():
 			i = i.strip()
 			_, local_addr, _ = i.split(' ', 2)
 			yield local_addr
-	#enddef
 
 	def get_port(s):
 		port = s.rsplit(':', 1)[1]
 		return int(port)
-	#enddef
 
 	ipv4 = get_output('netstat -a -n -p tcp').split('\n')
 	ipv4 = [i for i in ipv4 if '0.0.0.0' in i]
@@ -41,7 +38,6 @@ def get_listening_ports():
 	ipv6 = sorted(list(set(ipv6)))
 
 	return ipv4, ipv6
-#enddef
 
 
 def find_only():
@@ -53,18 +49,15 @@ def find_only():
 	ret4 = ipv4[:]
 	for i in ipv6:
 		if i in ret4: ret4.remove(i)
-	#endfor
 
 	ret6 = ipv6[:]
 	for i in ipv4:
 		if i in ret6: ret6.remove(i)
-	#endfor
 
 	logging.debug('ipv4_only: %s' % ret4)
 	logging.debug('ipv6_only: %s' % ret6)
 
 	return ret4, ret6
-#enddef
 
 
 def shutdown_socket(sock):
@@ -73,15 +66,12 @@ def shutdown_socket(sock):
 		sock.close()
 	except:
 		logging.error('socket shutdown failed')
-	#endtry
-#enddef
 
 
 class MainLoop():
 	def __init__(self):
 		self._run = False
 		self._refresh = False
-	#enddef
 
 	def run(self):
 		sock_pairs = []
@@ -112,7 +102,6 @@ class MainLoop():
 					logging.debug('listening on port %s' % p)
 					listen_socks.append(s)
 					listen_sock_to_port_map[s] = p
-				#endfor
 
 				for s, p in listen_sock_to_port_map.copy().items():
 					if not p in ipv6_only: continue
@@ -122,12 +111,10 @@ class MainLoop():
 					listen_socks.remove(s)
 					del listen_sock_to_port_map[s]
 					s.close()
-				#endfor
 
 				self._refresh = False
 
 				t_last_check = t
-			#endif
 
 			rlist = listen_socks[:]
 			wlist = []
@@ -138,7 +125,6 @@ class MainLoop():
 				rlist.append(s2)
 				xlist.append(s1)
 				xlist.append(s2)
-			#endfor
 
 			# this a workaround for windows because it can't handle when all lists are empty
 			if not rlist and not wlist and not xlist:
@@ -146,7 +132,6 @@ class MainLoop():
 				rlist, wlist, xlist = [], [], []
 			else:
 				rlist, wlist, xlist = select.select(rlist, wlist, xlist, 1)  # TODO: hard-coded shit
-			#endif
 
 			for s in listen_socks:
 				if s in rlist:
@@ -158,15 +143,11 @@ class MainLoop():
 						sock_pairs.append((conn, s2))
 					except socket.error as e:
 						logging.error('failed to connect to local ipv4 socket. errno is %s' % e.errno)
-					#endtry
-				#endif
 
 				if s in xlist:
 					logging.debug('listening socket in xlist')
 					# TODO: do something
 					#break
-				#endif
-			#endfor
 
 			for s1, s2 in sock_pairs[:]:
 				shut_it_down = False
@@ -177,7 +158,6 @@ class MainLoop():
 					except:
 						logging.debug('s1.recv() exception, probably closed by remote end')
 						buf = ''
-					#endtry
 
 					if len(buf) == 0:
 						logging.debug('shutdown1')
@@ -187,9 +167,6 @@ class MainLoop():
 							s2.send(buf)
 						except:
 							logging.exception('s2.send() exception')
-						#endtry
-					#endif
-				#endif
 
 				if s2 in rlist:
 					try:
@@ -197,7 +174,6 @@ class MainLoop():
 					except:
 						logging.debug('s2.recv() exception, probably closed by remote end')
 						buf = ''
-					#endtry
 
 					if len(buf) == 0:
 						logging.debug('shutdown2')
@@ -207,53 +183,39 @@ class MainLoop():
 							s1.send(buf)
 						except:
 							logging.exception('s1.send() exception')
-						#endtry
-					#endif
-				#endif
 
 				if s1 in xlist:
 					logging.debug('s1 in xlist')
 					# TODO: do something
-				#endif
 
 				if s2 in xlist:
 					logging.debug('s2 in xlist')
 					# TODO: do something
-				#endif
 
 				if shut_it_down:
 					shutdown_socket(s2)
 					shutdown_socket(s1)
 
 					sock_pairs.remove((s1, s2))
-				#endif
-			#endfor
-		#endwhile
 
 		logging.debug('exited loop')
 
 		logging.info('shutting down listening sockets')
 		for s in listen_socks:
 			s.close()
-		#endfor
 		listen_socks.clear()
 
 		logging.info('shutting down socket pairs')
 		for s1, s2 in sock_pairs:
 			socket_shutdown(s1)
 			socket_shutdown(s2)
-		#endfor
 		sock_pairs.clear()
-	#enddef
 
 	def refresh(self):
 		self._refresh = True
-	#enddef
 
 	def stop(self):
 		self._run = False
-	#enddef
-#endif
 
 
 def logging_setup(level, fn=None):
@@ -272,5 +234,3 @@ def logging_setup(level, fn=None):
 		fh.setLevel(level)
 		fh.setFormatter(formatter)
 		logger.addHandler(fh)
-	#endif
-#enddef

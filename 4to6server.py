@@ -21,10 +21,7 @@ def main():
 		ml.run()
 	except KeyboardInterrupt:
 		logging.debug('keyboard interrupt!')
-	#endtry
-#enddef
 
 
 if __name__ == '__main__':
 	main()
-#endif

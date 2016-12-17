@@ -26,8 +26,6 @@ def logging_setup(level, fn=None):
 		fh.setLevel(level)
 		fh.setFormatter(formatter)
 		logger.addHandler(fh)
-	#endif
-#enddef
 
 
 def main():
@@ -60,7 +58,6 @@ def main():
 			rlist.append(s2)
 			xlist.append(s1)
 			xlist.append(s2)
-		#endfor
 
 		# this a workaround for windows because it can't handle when all lists are empty
 		# note: this actually never happens here but i've just cut-n-pasted it from ipv6listen
@@ -69,7 +66,6 @@ def main():
 			rlist, wlist, xlist = [], [], []
 		else:
 			rlist, wlist, xlist = select.select(rlist, wlist, xlist, 1)
-		#endif
 
 		if sock in rlist:
 			logging.debug('accept')
@@ -79,12 +75,10 @@ def main():
 			s2 = socket.socket(socket.AF_INET6)
 			s2.connect((remote, remote_port))
 			sock_pairs.append((conn, s2))
-		#endif
 
 		if sock in xlist:
 			logging.debug('sock in xlist')
 			break
-		#endif
 
 		for s1,s2 in sock_pairs:
 			if s1 in rlist:
@@ -98,8 +92,6 @@ def main():
 					logging.debug('shutdown1')
 				else:
 					s2.send(buf)
-				#endif
-			#endif
 
 			if s2 in rlist:
 				buf = s2.recv(100000)  # TODO: hard-coded shit
@@ -112,34 +104,24 @@ def main():
 					logging.debug('shutdown2')
 				else:
 					s1.send(buf)
-				#endif
-			#endif
 
 			if s1 in xlist:
 				logging.debug('s1 in xlist')
-			#endif
 
 			if s2 in xlist:
 				logging.debug('s2 in xlist')
-			#endif
-		#endfor
-	#endwhile
 
 	logging.debug('exited loop')
 
 	logging.info('shutting down listening sockets')
 	for s in listen_socks:
 		s.close()
-	#endfor
 
 	logging.info('shutting down socket pairs')
 	for s1, s2 in sock_pairs:
 		socket_shutdown(s1)
 		socket_shutdown(s2)
-	#endfor
-#enddef
 
 
 if __name__ == '__main__':
 	main()
-#endif
