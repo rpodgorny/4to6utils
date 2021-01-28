@@ -41,21 +41,6 @@ def get_listening_ports():
 	return ipv4, ipv6
 
 
-def find_only():
-	ipv4, ipv6 = get_listening_ports()
-	logging.debug('ipv4: %s' % ipv4)
-	logging.debug('ipv6: %s' % ipv6)
-	ret4 = ipv4[:]
-	for i in ipv6:
-		if i in ret4: ret4.remove(i)
-	ret6 = ipv6[:]
-	for i in ipv4:
-		if i in ret6: ret6.remove(i)
-	logging.debug('ipv4_only: %s' % ret4)
-	logging.debug('ipv6_only: %s' % ret6)
-	return ret4, ret6
-
-
 def shutdown_socket(sock):
 	try:
 		sock.shutdown(socket.SHUT_RDWR)
@@ -74,6 +59,7 @@ class MainLoop():
 
 		listen_socks = []
 		listen_sock_to_port_map = {}
+		failed_ports = set()
 
 		t_last_check = 0
 
@@ -84,16 +70,27 @@ class MainLoop():
 			if t - t_last_check > 60 or self._refresh:  # TODO: hard-coded shit
 				logging.debug('scanning for listening port changes')
 
-				ipv4_only, ipv6_only = find_only()
+				ipv4, ipv6 = get_listening_ports()
+				logging.debug('ipv4: %s ipv6: %s' % (ipv4, ipv6))
+				ipv4_only = set(ipv4) - set(ipv6)
+				ipv6_only = set(ipv6) - set(ipv4)
+				logging.debug('ipv4-only: %s ipv6-only: %s' % (ipv4_only, ipv6_only))
 
 				for p in ipv4_only:
+					if p in failed_ports:
+						continue
 					if p in listen_sock_to_port_map.values():
 						continue
 					logging.info('found new ipv4-only port %s' % p)
-					s = socket.socket(socket.AF_INET6)
-					s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-					s.bind(('::', p))
-					s.listen(10)
+					try:
+						s = socket.socket(socket.AF_INET6)
+						s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+						s.bind(('::', p))
+						s.listen(10)
+					except:
+						logging.exception('bind/listen exception - adding port %s to ignore list' % p)
+						failed_ports.add(p)
+						continue
 					logging.debug('listening on port %s' % p)
 					listen_socks.append(s)
 					listen_sock_to_port_map[s] = p
@@ -105,6 +102,12 @@ class MainLoop():
 					listen_socks.remove(s)
 					del listen_sock_to_port_map[s]
 					s.close()
+
+				for p in failed_ports.copy():
+					if p in ipv4_only:
+						continue
+					logging.info('port %s no longer ipv4-only, removing from ignore list' % p)
+					failed_ports.remove(p)
 
 				self._refresh = False
 
