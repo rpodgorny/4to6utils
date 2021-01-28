@@ -16,7 +16,8 @@ def get_output(cmd):
 def get_listening_ports():
 	def parse(s):
 		for i in s:
-			while '  ' in i: i = i.replace('  ', ' ')
+			while '  ' in i:
+				i = i.replace('  ', ' ')
 			i = i.strip()
 			_, local_addr, _ = i.split(' ', 2)
 			yield local_addr
