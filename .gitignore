@@ -1,1 +1,4 @@
+4to6client.log
 __pycache__
+.vagrant
+*.atxpkg.zip
