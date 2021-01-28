@@ -42,21 +42,16 @@ def get_listening_ports():
 
 def find_only():
 	ipv4, ipv6 = get_listening_ports()
-
 	logging.debug('ipv4: %s' % ipv4)
 	logging.debug('ipv6: %s' % ipv6)
-
 	ret4 = ipv4[:]
 	for i in ipv6:
 		if i in ret4: ret4.remove(i)
-
 	ret6 = ipv6[:]
 	for i in ipv4:
 		if i in ret6: ret6.remove(i)
-
 	logging.debug('ipv4_only: %s' % ret4)
 	logging.debug('ipv6_only: %s' % ret6)
-
 	return ret4, ret6
 
 
@@ -91,10 +86,9 @@ class MainLoop():
 				ipv4_only, ipv6_only = find_only()
 
 				for p in ipv4_only:
-					if p in listen_sock_to_port_map.values(): continue
-
+					if p in listen_sock_to_port_map.values():
+						continue
 					logging.info('found new ipv4-only port %s' % p)
-
 					s = socket.socket(socket.AF_INET6)
 					s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 					s.bind(('::', p))
@@ -104,10 +98,9 @@ class MainLoop():
 					listen_sock_to_port_map[s] = p
 
 				for s, p in listen_sock_to_port_map.copy().items():
-					if not p in ipv6_only: continue
-
+					if not p in ipv6_only:
+						continue
 					logging.info('detected stale ipv6-only port %s' % p)
-
 					listen_socks.remove(s)
 					del listen_sock_to_port_map[s]
 					s.close()
@@ -116,9 +109,7 @@ class MainLoop():
 
 				t_last_check = t
 
-			rlist = listen_socks[:]
-			wlist = []
-			xlist = listen_socks[:]
+			rlist, wlist, xlist = listen_socks[:], [], listen_socks[:]
 
 			for s1, s2 in sock_pairs:
 				rlist.append(s1)
@@ -195,7 +186,6 @@ class MainLoop():
 				if shut_it_down:
 					shutdown_socket(s2)
 					shutdown_socket(s1)
-
 					sock_pairs.remove((s1, s2))
 
 		logging.debug('exited loop')
