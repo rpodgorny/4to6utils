@@ -5,7 +5,7 @@ rm -rf build dist
 
 #pip install --no-cache-dir -i http://10.0.2.2:3141/root/pypi/+simple/ --trusted-host 10.0.2.2 --upgrade pip  # otherwise editable install mode for atxpylib does not work
 #pip install --no-cache-dir -i http://10.0.2.2:3141/root/pypi/+simple/ --trusted-host 10.0.2.2 -r requirements.txt
-pip install --no-cache-dir -i http://10.0.2.2:3141/root/pypi/+simple/ --trusted-host 10.0.2.2 pyinstaller "setuptools<45"
+pip install --no-cache-dir -i http://10.0.2.2:3141/root/pypi/+simple/ --trusted-host 10.0.2.2 "pyinstaller<4" "setuptools<45"
 #python atxmanager/version.py >__v.txt
 pyinstaller --noconfirm --clean --noupx --windowed 4to6server.py
 pyinstaller --noconfirm --clean --noupx -n 4to6server_nw 4to6server.py
