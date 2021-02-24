@@ -7,10 +7,10 @@ rm -rf build dist
 #pip install --no-cache-dir -i http://10.0.2.2:3141/root/pypi/+simple/ --trusted-host 10.0.2.2 -r requirements.txt
 pip install --no-cache-dir -i http://10.0.2.2:3141/root/pypi/+simple/ --trusted-host 10.0.2.2 "pyinstaller<4" "setuptools<45"
 #python atxmanager/version.py >__v.txt
-pyinstaller --noconfirm --clean --noupx --windowed 4to6server.py
-pyinstaller --noconfirm --clean --noupx -n 4to6server_nw 4to6server.py
-pyinstaller --noconfirm --clean --noupx --windowed 4to6client.py
-pyinstaller --noconfirm --clean --noupx -n 4to6client_nw 4to6client.py
+pyinstaller --noconfirm --clean --noupx --windowed 4to6serverw.py
+pyinstaller --noconfirm --clean --noupx 4to6server.py
+pyinstaller --noconfirm --clean --noupx --windowed 4to6clientw.py
+pyinstaller --noconfirm --clean --noupx 4to6client.py
 #pyinstaller --noconfirm --clean --noupx --version-file __v.txt --add-data "atxmanager/templates;templates" --add-data "atxmanager/static;static" --add-data "captions.cs;." -n manager_nw manager.py
 #pyinstaller --noconfirm --clean --noupx --add-data "test;test" tests.py
 #rm -rf __v.txt
