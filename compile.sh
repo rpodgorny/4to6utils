@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e -x
 
 export name=4to6utils
